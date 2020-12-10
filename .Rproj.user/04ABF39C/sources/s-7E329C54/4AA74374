@@ -1,0 +1,32 @@
+{
+    "id": "4AA74374",
+    "path": null,
+    "project_path": null,
+    "type": "r_dataframe",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1607605225481.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "expression": "RankingSorted",
+        "caption": "RankingSorted",
+        "totalObservations": 13,
+        "displayedObservations": 13,
+        "variables": 6,
+        "cacheKey": "677DD254",
+        "object": "RankingSorted",
+        "environment": "",
+        "contentUrl": "grid_resource/gridviewer.html?env=&obj=RankingSorted&cache_key=677DD254&max_cols=50",
+        "preview": 0
+    },
+    "folds": "",
+    "lastKnownWriteTime": 7954884637903448438,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1607605225481,
+    "read_only": false,
+    "read_only_alternatives": []
+}
