@@ -1,4 +1,4 @@
-Participant ID;Task ID;Layout ID;Date;Q1;Q2;Q3;Q4;Q5;Q6
+Participant ID;Task ID;Layout ID;Date;MD;PD;TD;P;E;FL
 1;Linear;1;08-dec;2;4;3;4;10;1
 1;Unrestricted;4;08-dec;8;9;10;10;9;7
 1;Grid;3;08-dec;1;1;1;1;10;1
