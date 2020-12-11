@@ -23,6 +23,7 @@ rawData$testIDIndividual <- as.factor(rawData$testIDIndividual)
 #check that the inventory is now a factor
 class(rawData$Inventory)  
 
+
 ## Making the main Data Frame =================================
 
 #Making the main data frame 
@@ -81,6 +82,8 @@ ggplot(finalTimes, aes(x = correctCategoryTimer)) +
 
 #based on the shapiro test, qqplot and histogram it would be difficult to justify that the data is parametric 
 #time spent in the correct cateogry also doesnt seem to be parametric
+
+
 ### Overview of the data =================================
 
 #Having them next to each other, it is hard to see a difference I wonder if we will find any statically difference. Again Clear outlire
@@ -158,6 +161,11 @@ FridemanInventory <- finalTimes %>%
   group_by(Inventory, testIDIndividual) %>% 
   summarise(medianFinalTime=median(totalTime))
 
+#correct category times
+friedmanInventoryInCorrectCategory <- finalTimes %>% 
+  group_by(Inventory, testIDIndividual) %>% 
+  summarise(medianFinalTime=median(correctCategoryTimer))
+
 #It does not look like there are much significant difference
 friedman.test(y=FridemanInventory$medianFinalTime, 
               groups=FridemanInventory$Inventory, 
@@ -170,24 +178,28 @@ friedman(FridemanInventory$testIDIndividual,
          FridemanInventory$medianFinalTime,
          console = TRUE)
 
-# I could not get you code here to run
-timesForCorrectCategory <- finalTimes %>%  group_by(taskID, ParticipantID, correctCategoryTimer) %>%
-  summarise()
+friedman(friedmanInventoryInCorrectCategory$testIDIndividual,
+         friedmanInventoryInCorrectCategory$Inventory,
+         friedmanInventoryInCorrectCategory$medianFinalTime,
+         console = TRUE)
 
-friedman.test(y = timesForCorrectCategory$correctCategoryTimer, 
-              groups = timesForCorrectCategory$taskID, 
-              blocks = timesForCorrectCategory$ParticipantID)
-
+#none are significant
 
 
 # Using regression it shows that unrestricted is significant faster, not sure if you want to use regression. you have to look it up I just did it for fun
 summary(glm(totalTime ~ Inventory,  family="poisson", data = finalTimes))
+summary(glm(correctCategoryTimer ~ Inventory,  family="poisson", data = finalTimes))
+
+
+
+
+
+
+
 
 
 
 ## Analyzing the Errors Made =================================
-
-# I have not made any analysis of errors I just made the structure
 
 ### Checking for Normality =================================
 
@@ -290,3 +302,67 @@ friedman(friedmanItemErrors$testIDIndividual,
          console = TRUE)
 
 #not significant 
+
+
+
+
+
+
+## Analyzing if the correct items affect the results
+
+### The timers and errors have been previously checked for normality
+
+### Data overview
+
+itemsVsTimeAndError <- finalTimes %>% group_by(correctItemID) %>%
+  summarise(medianTimeInCorrectCategory = median(correctCategoryTimer),
+            medianFinalTime = median(totalTime),
+            totalItemError = sum(totalWrongItem),
+            totalCategoryError = sum(totalWrongCategory))
+
+#this is supposed to check if the items affect the correct category time, the result is insignificant, but there's an error that also gets produced, so i dont know how reliable it is
+
+friedmanItem <- finalTimes %>% 
+  group_by(correctItemID, testIDIndividual) %>% 
+  summarise(medianTimeInCorrectCategory=median(correctCategoryTimer))
+
+friedman(friedmanItem$testIDIndividual,
+         friedmanItem$correctItemID,
+         friedmanItem$medianTimeInCorrectCategory,
+         console = TRUE)
+
+friedmanItemFinalTime <- finalTimes %>% 
+  group_by(correctItemID, testIDIndividual) %>% 
+    summarise(medianFinalTime=median(totalTime))
+
+friedman(friedmanItemFinalTime$testIDIndividual,
+         friedmanItemFinalTime$correctItemID,
+         friedmanItemFinalTime$medianFinalTime,
+         console = TRUE)
+#this if the items affected the errors
+
+friedmanErrorIPerItem <- finalTimes %>% 
+  group_by(correctItemID, testIDIndividual) %>% 
+  summarise(ErrorsType_I = max(totalWrongItem))
+
+friedmanErrorIIPerItem <- finalTimes %>% 
+  group_by(correctItemID, testIDIndividual) %>% 
+  summarise(ErrorsType_II = max(totalWrongCategory))
+
+friedman(friedmanErrorIPerItem$testIDIndividual,
+         friedmanErrorIPerItem$correctItemID,
+         friedmanErrorIPerItem$ErrorsType_I,
+         console = TRUE)
+
+friedman(friedmanErrorIIPerItem$testIDIndividual,
+         friedmanErrorIIPerItem$correctItemID,
+         friedmanErrorIIPerItem$ErrorsType_II,
+         console = TRUE)
+
+
+
+medianTimeForTestOrder <- group_by(finalTimes, Inventory, testIDIndividual) %>%
+                            summarise(time=median(totalTime))
+
+
+#Looking for learning curve
