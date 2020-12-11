@@ -1,6 +1,6 @@
 ## Load Library and Data =================================
 
-#library(dplyr)
+library(dplyr)
 library("readxl")
 library("car")
 library(tidyverse)
@@ -59,8 +59,12 @@ summary(finalTimes)
 #shapiro test to look for nomality
 shapiro.test(finalTimes$totalTime)
 
+shapiro.test(finalTimes$correctCategoryTimer)
+
 #Looking at the qqplot there are some clear outliers
 qqPlot(finalTimes$totalTime)
+
+qqPlot(finalTimes$correctCategoryTimer)
 
 #Looking at the histogram there is again some very clear outliers and the median line is not at the peak as we had hoped
 ggplot(finalTimes, aes(x = totalTime)) +
@@ -68,9 +72,15 @@ ggplot(finalTimes, aes(x = totalTime)) +
   geom_density(alpha = .2, fill = "#FF6666") +
   geom_vline(aes(xintercept = median(totalTime)), color = "blue", linetype = "dashed", size = 1) +
   theme_bw()
+#correct category
+ggplot(finalTimes, aes(x = correctCategoryTimer)) +
+  geom_histogram(aes(y = ..density..), colour = "black", fill = "white") +
+  geom_density(alpha = .2, fill = "#FF6666") +
+  geom_vline(aes(xintercept = median(correctCategoryTimer)), color = "blue", linetype = "dashed", size = 1) +
+  theme_bw()
 
 #based on the shapiro test, qqplot and histogram it would be difficult to justify that the data is parametric 
-
+#time spent in the correct cateogry also doesnt seem to be parametric
 ### Overview of the data =================================
 
 #Having them next to each other, it is hard to see a difference I wonder if we will find any statically difference. Again Clear outlire
@@ -78,13 +88,32 @@ ggplot(finalTimes, aes(x = Inventory, y = totalTime )) +
   geom_boxplot(aes(alpha = .1)) +
   theme_bw()
 
+#correct category
+ggplot(finalTimes, aes(x = Inventory, y = correctCategoryTimer )) +
+  geom_boxplot(aes(alpha = .1)) +
+  theme_bw()
+
 #making a new dataframe only containing the median total time. 
 MedianTime <- finalTimes %>%
   group_by(Inventory) %>%
   summarise(medianTotal = median(totalTime))
+#same for time spent inside the category
+medianCorrectCategoryTime <- finalTimes %>%
+  group_by(Inventory) %>%
+  summarise(medianTotal = median(correctCategoryTimer))
+
+medianCorrectAndFinal <- finalTimes %>%
+  group_by(Inventory) %>%
+  summarise(medianFinal = median(totalTime), medianCategory = median(correctCategoryTimer))
 
 #Bar chart visulizing the different median times. As we can see the median is quite small only a bit over 6 - 7 sec.
 ggplot(MedianTime, aes(x=Inventory, y=medianTotal)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=medianTotal), vjust=-0.3, size=3.5)+
+  theme_minimal()
+
+#time spent in correct category
+ggplot(medianCorrectCategoryTime, aes(x=Inventory, y=medianTotal)) +
   geom_bar(stat="identity")+
   geom_text(aes(label=medianTotal), vjust=-0.3, size=3.5)+
   theme_minimal()
@@ -159,11 +188,71 @@ summary(glm(totalTime ~ Inventory,  family="poisson", data = finalTimes))
 ## Analyzing the Errors Made =================================
 
 # I have not made any analysis of errors I just made the structure
+
 ### Checking for Normality =================================
 
 #Test Nomality here
 
+shapiro.test(finalTimes$totalWrongCategory)
+shapiro.test(finalTimes$totalWrongItem)
+
+#qq plot 
+
+qqPlot(finalTimes$totalWrongCategory)
+qqPlot(finalTimes$totalWrongItem)
+
+#histogram 
+
+ggplot(finalTimes, aes(x = totalWrongCategory)) +
+  geom_histogram(aes(y = ..density..), colour = "black", fill = "white") +
+  geom_density(alpha = .2, fill = "#FF6666") +
+  geom_vline(aes(xintercept = median(totalWrongCategory)), color = "blue", linetype = "dashed", size = 1) +
+  theme_bw()
+
+ggplot(finalTimes, aes(x = totalWrongItem)) +
+  geom_histogram(aes(y = ..density..), colour = "black", fill = "white") +
+  geom_density(alpha = .2, fill = "#FF6666") +
+  geom_vline(aes(xintercept = median(totalWrongItem)), color = "blue", linetype = "dashed", size = 1) +
+  theme_bw()
+
 ### Overview of the data =================================
+
+#making new data set, with only inventories and errors
+
+errorData <- finalTimes %>% group_by(Inventory) %>%
+                                  summarise(meanItemError = mean(totalWrongItem),
+                                            meanCategoryError = mean(totalWrongCategory),
+                                            totalItemError = sum(totalWrongItem),
+                                            totalCategoryError = sum(totalWrongCategory))
+
+#plotting the total number of category errors
+
+#either use the total number of errors, or the mean, but not both, the graphs look the same
+
+#total errors
+
+ggplot(errorData, aes(x=Inventory, y=totalCategoryError)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=totalCategoryError), vjust=-0.3, size=3.5)+
+  theme_minimal()
+
+ggplot(errorData, aes(x=Inventory, y=totalItemError)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=totalItemError), vjust=-0.3, size=3.5)+
+  theme_minimal()
+
+#mean errors
+
+ggplot(errorData, aes(x=Inventory, y=meanCategoryError)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=meanCategoryError), vjust=-0.3, size=3.5)+
+  theme_minimal()
+
+ggplot(errorData, aes(x=Inventory, y=meanItemError)) +
+  geom_bar(stat="identity")+
+  geom_text(aes(label=meanItemError), vjust=-0.3, size=3.5)+
+  theme_minimal()
+
 
 # Getting an overview of the Total time 
 finalTimes %>%
@@ -177,5 +266,27 @@ finalTimes %>%
 
 ### Statistical Analysis =================================
 
+#category error data, made for the friedman test
+friedmanCategoryErrors <- finalTimes %>% 
+  group_by(Inventory, testIDIndividual) %>% 
+         summarise(categoryErrors=max(totalWrongCategory))
 
 
+friedman(friedmanCategoryErrors$testIDIndividual,
+         friedmanCategoryErrors$Inventory,
+         friedmanCategoryErrors$categoryErrors,
+         console = TRUE)
+
+#not significant
+
+friedmanItemErrors <- finalTimes %>% 
+  group_by(Inventory, testIDIndividual) %>% 
+  summarise(itemErrors=max(totalWrongItem))
+
+
+friedman(friedmanItemErrors$testIDIndividual,
+         friedmanItemErrors$Inventory,
+         friedmanItemErrors$itemErrors,
+         console = TRUE)
+
+#not significant 
