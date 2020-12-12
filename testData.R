@@ -366,3 +366,7 @@ medianTimeForTestOrder <- group_by(finalTimes, Inventory, testIDIndividual) %>%
 
 
 #Looking for learning curve
+
+#Reformatted the medianCorrectAndFinal table so it could be plotted as we wanted.
+ggplot(data=medianCorrectAndFinalReformatted, aes(x = Inventory, y=Time, fill=Medians)) + geom_bar(stat = "identity", position=position_dodge()) + ylim(0, 8)
+´#barplot(medianCorrectAndFinalReformatted)
