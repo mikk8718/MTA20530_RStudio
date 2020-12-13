@@ -8,6 +8,9 @@ library(gapminder)
 library(ggpubr)
 library(rstatix)
 library(ggplot2)
+library(agricolae)
+library("writexl")
+
 #Load the data into R. Let's hope Xlsx haven't fucked up the data
 rawData <- read_excel("TestData.xlsx")
 
@@ -49,8 +52,8 @@ finalTimes <- finalTimes %>%
 
 
 #Testing for learning curve
-medianTimeForTestOrder <- group_by(finalTimes, Inventory, testIDIndividual) %>%
-  summarise(timeInCorrectCategory=median(correctCategoryTimer),timeInOtherCategories=median(timeInWrongCategories))
+medianTimeForTestOrder <- group_by(finalTimes, Inventory, testIDIndividual,correctCategoryTimer) %>%
+  summarise()
 
 medianTimeForTestOrder <- medianTimeForTestOrder %>% 
   mutate(newTestIDIndividual = testIDIndividual%%5)
@@ -61,10 +64,17 @@ medianTimeForTestOrder <- medianTimeForTestOrder %>%
 
 #this says N/A. but we will fill it out in Excel because there is only a few cases
 
-learningCurveCheck <- group_by(medianTimeForTestOrder, Inventory, actualTestOrder)%>%
+learningCurveCheckWithMedians <- group_by(medianTimeForTestOrder, Inventory, actualTestOrder)%>%
                             summarise(timeInCorrectCategory = median(timeInCorrectCategory))
 
+learningCurveCheck <- group_by(medianTimeForTestOrder,Inventory,actualTestOrder,correctCategoryTimer)%>%summarise()
 
+write_xlsx(learningCurveCheck,"learningCurve.xlsx")
+
+#friedman(learningCurveCheck$Inventory,
+#         learningCurveCheck$actualTestOrder,
+#         learningCurveCheck$timeInCorrectCategory,
+#         console = TRUE)
 
 LinearCurve$testIDIndividual <- as.factor(LinearCurve$testIDIndividual)
 LinearCurve$medianTime <- as.factor(LinearCurve$medianTime)
@@ -75,17 +85,39 @@ UnrestrictedCurve$medianTime <- as.factor(UnrestrictedCurve$medianTime)
 CircularCurve$testIDIndividual <- as.factor(CircularCurve$testIDIndividual)
 CircularCurve$medianTime <- as.factor(CircularCurve$medianTime)
 
+cor(LinearCurve$actualTestOrder, LinearCurve$correctCategoryTimer)
 
-ggplot(CircularCurve, aes(x=testIDIndividual,y=medianTime))+geom_smooth(method = lm)+geom_point()
+cor(CircularCurve$actualTestOrder, CircularCurve$correctCategoryTimer)
 
-ggplot(GridCurve, aes(x=testIDIndividual,y=medianTime))+geom_point()+geom_smooth(method = lm)
+cor(GridCurve$actualTestOrder, GridCurve$correctCategoryTimer)
 
-ggplot(LinearCurve, aes(x=testIDIndividual,y=medianTime))+geom_point()+geom_smooth(method = lm)
+cor(UnrestrictedCurve$actualTestOrder, UnrestrictedCurve$correctCategoryTimer)
 
-ggplot(UnrestrictedCurve, aes(x=testIDIndividual,y=medianTime))+geom_point()+geom_smooth(method = lm)
+summary(glm(correctCategoryTimer~actualTestOrder, data = LinearCurve))
 
+summary(glm(correctCategoryTimer~actualTestOrder, data = CircularCurve))
 
+summary(glm(correctCategoryTimer~actualTestOrder, data = GridCurve))
 
+summary(glm(correctCategoryTimer~actualTestOrder, data = UnrestrictedCurve))
+
+circular <- ggplot(CircularCurve, aes(x=actualTestOrder,y=correctCategoryTimer))+geom_smooth(method = lm)+geom_point()
+
+grid <- ggplot(GridCurve, aes(x=actualTestOrder,y=correctCategoryTimer))+geom_point()+geom_smooth(method = lm)
+
+linear <- ggplot(LinearCurve, aes(x=actualTestOrder,y=correctCategoryTimer))+geom_point()+geom_smooth(method = lm)
+
+unrestricted <- ggplot(UnrestrictedCurve, aes(x=actualTestOrder,y=correctCategoryTimer))+geom_point()+geom_smooth(method = lm)
+
+circular
+
+grid
+
+linear
+
+unrestricted
+
+ggplot(learningCurveCheck, aes(x=actualTestOrder,y=correctCategoryTimer,fill=Inventory))+geom_smooth(method = lm, se=FALSE,aes(color=Inventory,linetype=Inventory))+coord_cartesian(ylim=c(2.5,5))+xlab("Test NR.")+ylab("Time in correct cateogry(s)")
 #overview of the data frame
 
 # The inventory, ParticipantID, taskID and were saved as a character/num and we need them as a factor to plot it
@@ -218,7 +250,7 @@ friedman.test(y=FridemanInventory$medianFinalTime,
               blocks=FridemanInventory$testIDIndividual)
 
 #the following analysis gives a bit more information
-library(agricolae)
+
 friedman(FridemanInventory$testIDIndividual,
          FridemanInventory$Inventory,
          FridemanInventory$medianFinalTime,
