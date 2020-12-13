@@ -7,21 +7,14 @@ library(tidyverse)
 library(gapminder)
 library(ggpubr)
 library(rstatix)
-
+library(ggplot2)
 #Load the data into R. Let's hope Xlsx haven't fucked up the data
 rawData <- read_excel("TestData.xlsx")
 
 #Make the data into a .rda file that works better with r-studio
 save(rawData, file='AllRawData.rda', compress=TRUE)
 
-# The inventory, ParticipantID, taskID and were saved as a character/num and we need them as a factor to plot it
-rawData$Inventory <- as.factor(rawData$Inventory)
-rawData$ParticipantID <- as.factor(rawData$ParticipantID)
-rawData$taskID <- as.factor(rawData$taskID)
-rawData$testIDIndividual <- as.factor(rawData$testIDIndividual)
 
-#check that the inventory is now a factor
-class(rawData$Inventory)  
 
 
 ## Making the main Data Frame =================================
@@ -50,7 +43,60 @@ finalTimes <- finalTimes %>%
                                           correctItemID == 3 ~ totalTimeDrink, 
                                           TRUE ~ NA_real_))
 
+specify_decimal <- function(x, k) trimws(format(round(x, k), nsmall=k))
+finalTimes <- finalTimes %>% 
+  mutate(timeInWrongCategories = specify_decimal((totalTimeFood+totalTimeTool+totalTimeMaterial+totalTimeDrink-correctCategoryTimer),3))
+
+
+#Testing for learning curve
+medianTimeForTestOrder <- group_by(finalTimes, Inventory, testIDIndividual) %>%
+  summarise(timeInCorrectCategory=median(correctCategoryTimer),timeInOtherCategories=median(timeInWrongCategories))
+
+medianTimeForTestOrder <- medianTimeForTestOrder %>% 
+  mutate(newTestIDIndividual = testIDIndividual%%5)
+
+medianTimeForTestOrder <- medianTimeForTestOrder %>% 
+  mutate(actualTestOrder = case_when(newTestIDIndividual == 0 ~ 5, 
+                                                       TRUE ~ newTestIDIndividual))
+
+#this says N/A. but we will fill it out in Excel because there is only a few cases
+
+learningCurveCheck <- group_by(medianTimeForTestOrder, Inventory, actualTestOrder)%>%
+                            summarise(timeInCorrectCategory = median(timeInCorrectCategory))
+
+
+
+LinearCurve$testIDIndividual <- as.factor(LinearCurve$testIDIndividual)
+LinearCurve$medianTime <- as.factor(LinearCurve$medianTime)
+GridCurve$testIDIndividual <- as.factor(GridCurve$testIDIndividual)
+GridCurve$medianTime <- as.factor(GridCurve$medianTime)
+UnrestrictedCurve$testIDIndividual <- as.factor(UnrestrictedCurve$testIDIndividual)
+UnrestrictedCurve$medianTime <- as.factor(UnrestrictedCurve$medianTime)
+CircularCurve$testIDIndividual <- as.factor(CircularCurve$testIDIndividual)
+CircularCurve$medianTime <- as.factor(CircularCurve$medianTime)
+
+
+ggplot(CircularCurve, aes(x=testIDIndividual,y=medianTime))+geom_smooth(method = lm)+geom_point()
+
+ggplot(GridCurve, aes(x=testIDIndividual,y=medianTime))+geom_point()+geom_smooth(method = lm)
+
+ggplot(LinearCurve, aes(x=testIDIndividual,y=medianTime))+geom_point()+geom_smooth(method = lm)
+
+ggplot(UnrestrictedCurve, aes(x=testIDIndividual,y=medianTime))+geom_point()+geom_smooth(method = lm)
+
+
+
 #overview of the data frame
+
+# The inventory, ParticipantID, taskID and were saved as a character/num and we need them as a factor to plot it
+rawData$Inventory <- as.factor(rawData$Inventory)
+rawData$ParticipantID <- as.factor(rawData$ParticipantID)
+rawData$taskID <- as.factor(rawData$taskID)
+rawData$testIDIndividual <- as.factor(rawData$testIDIndividual)
+
+#check that the inventory is now a factor
+class(rawData$Inventory)  
+
 summary(finalTimes)
 
 ## Analyzing the time used =================================
@@ -362,11 +408,12 @@ friedman(friedmanErrorIIPerItem$testIDIndividual,
 
 
 medianTimeForTestOrder <- group_by(finalTimes, Inventory, testIDIndividual) %>%
-                            summarise(time=median(totalTime))
+                            summarise(timeInCorrectCategory=median(correctCategoryTimer),timeInOtherCategories=median(timeInWrongCategories))
+
+medianTimeForTestOrder <- medianTimeForTestOrder %>% 
+  mutate(newTestIDIndividual = testIDIndividual%%5)
+
 
 
 #Looking for learning curve
 
-#Reformatted the medianCorrectAndFinal table so it could be plotted as we wanted.
-ggplot(data=medianCorrectAndFinalReformatted, aes(x = Inventory, y=Time, fill=Medians)) + geom_bar(stat = "identity", position=position_dodge()) + ylim(0, 8)
-#barplot(medianCorrectAndFinalReformatted)
