@@ -93,13 +93,19 @@ cor(GridCurve$actualTestOrder, GridCurve$correctCategoryTimer)
 
 cor(UnrestrictedCurve$actualTestOrder, UnrestrictedCurve$correctCategoryTimer)
 
-summary(glm(correctCategoryTimer~actualTestOrder, data = LinearCurve))
+cor(medianTimeForTestOrder$testIDIndividual, medianTimeForTestOrder$correctCategoryTimer)
 
-summary(glm(correctCategoryTimer~actualTestOrder, data = CircularCurve))
+#summary(glm(totalTime ~ Inventory,  family="poisson", data = finalTimes))
 
-summary(glm(correctCategoryTimer~actualTestOrder, data = GridCurve))
+summary(glm(correctCategoryTimer~actualTestOrder, family="poisson", data = LinearCurve))
 
-summary(glm(correctCategoryTimer~actualTestOrder, data = UnrestrictedCurve))
+summary(glm(correctCategoryTimer~actualTestOrder,  family="poisson", data = CircularCurve))
+
+summary(glm(correctCategoryTimer~actualTestOrder,  family="poisson", data = GridCurve))
+
+summary(glm(correctCategoryTimer~actualTestOrder, family="poisson", data = UnrestrictedCurve))
+
+summary(glm(correctCategoryTimer~testIDIndividual, family="poisson",data=medianTimeForTestOrder))
 
 circular <- ggplot(CircularCurve, aes(x=actualTestOrder,y=correctCategoryTimer))+geom_smooth(method = lm)+geom_point()
 
@@ -116,9 +122,18 @@ grid
 linear
 
 unrestricted
+#point plot
+ggplot(medianTimeForTestOrder, aes(x=testIDIndividual,y=correctCategoryTimer,fill=Inventory))+geom_point(aes(colour=Inventory))+coord_cartesian(ylim=c(0,8))+xlab("Test NR.")+ylab("Time in correct cateogry(s)")
 
-ggplot(learningCurveCheck, aes(x=actualTestOrder,y=correctCategoryTimer,fill=Inventory))+geom_smooth(method = lm, se=FALSE,aes(color=Inventory,linetype=Inventory))+coord_cartesian(ylim=c(2.5,5))+xlab("Test NR.")+ylab("Time in correct cateogry(s)")
+
+ggplot(learningCurveCheck, aes(x=actualTestOrder,y=correctCategoryTimer,fill=Inventory))+geom_smooth(method = "loess", se=FALSE,aes(color=Inventory,linetype=Inventory))+coord_cartesian(ylim=c(0,8))+xlab("Test NR.")+ylab("Time in correct cateogry(s)")
 #overview of the data frame
+ggplot(medianTimeForTestOrder, aes(x=testIDIndividual,y=correctCategoryTimer))+geom_smooth(method = "loess", se=FALSE, aes(color=Inventory,linetype=Inventory)) + geom_smooth(method = "loess", se=FALSE)+coord_cartesian(ylim=c(1.5,10))+xlab("Test NR.")+ylab("Time in correct cateogry(s)") + theme_bw()
+
+8#ggplot(medianTimeForTestOrder, aes(x=testIDIndividual,y=correctCategoryTimer))+geom_smooth(method = "loess", se=FALSE)+coord_cartesian(ylim=c(0,10))+xlab("Test NR.")+ylab("Time in correct cateogry(s)")
+
+ 
+
 
 # The inventory, ParticipantID, taskID and were saved as a character/num and we need them as a factor to plot it
 rawData$Inventory <- as.factor(rawData$Inventory)
